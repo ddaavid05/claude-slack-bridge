@@ -2,7 +2,7 @@
 # claude-slack-bridge installer, for the current user:
 #   - makes the repo reachable as ~/.claude/slack-bridge (a link when cloned elsewhere),
 #   - links the slack-questions skill into ~/.claude/skills/,
-#   - adds the five hooks and one permission rule to ~/.claude/settings.json,
+#   - adds the seven hooks and one permission rule to ~/.claude/settings.json,
 #   - adds a short, marked block to ~/.claude/CLAUDE.md,
 #   - creates the config template ~/.config/claude-slack-bridge/config.json (mode 600).
 # Safe to run again: nothing is added twice, and a changed hook is replaced. Every file it changes

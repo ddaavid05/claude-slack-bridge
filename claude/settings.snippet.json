@@ -56,9 +56,33 @@
           }
         ]
       }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I \"$HOME/.claude/slack-bridge/bridge.py\" sessionend",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I \"$HOME/.claude/slack-bridge/bridge.py\" sessionstart",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   },
   "permissions": {
-    "allow": ["Bash(python3 -I ~/.claude/slack-bridge/bridge.py *)"]
+    "allow": [
+      "Bash(python3 -I ~/.claude/slack-bridge/bridge.py *)"
+    ]
   }
 }

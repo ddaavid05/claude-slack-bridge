@@ -12,7 +12,7 @@ you answer in the thread, and the session carries on from your answer.
         └──── your answer ◀───────────┘◀──────── it reads the thread ◀──── you reply in the thread
 ```
 
-No server, no public URL, no MCP: a Python script (standard library only) run by five Claude Code
+No server, no public URL, no MCP: a Python script (standard library only) run by seven Claude Code
 hooks, and a Slack app with two scopes that you install in your own workspace.
 
 ## What you get
@@ -165,6 +165,8 @@ Everything but the token and the ID is optional (`config.json`):
 | `PreToolUse` on `AskUserQuestion` | `ask` | DMs the questions, returns your answers as the tool's input |
 | `UserPromptSubmit`, async | `prompt` | you typed: terminal mode, open DMs marked answered |
 | `PostToolUse`, async | `posttool` | a tool ran: a permission DM for that call was answered at the terminal |
+| `SessionEnd` | `sessionend` | the session ended (`/clear`, exit): its waiters stop, its open DMs are marked ended, nothing more goes out for it |
+| `SessionStart` | `sessionstart` | a session resumed with `/resume` is live again |
 
 The behaviours of Claude Code it relies on, measured on 2.1.312 with a throwaway session in a
 pseudo-terminal against a fake Slack (`measure/`):
@@ -183,6 +185,8 @@ pseudo-terminal against a fake Slack (`measure/`):
   the bridge sees a permission you answered at the terminal);
 - hooks get `CLAUDE_PID`, `CLAUDE_CODE_SESSION_ID`, and `CLAUDE_CODE_SESSION_ATTENDED` (`0` for
   `claude -p`).
+- `/clear` starts a new session in the same process (`CLAUDE_PID` lives on): `SessionEnd` runs
+  for the old one with `reason: "clear"`, `SessionStart` for the new one with `source: "clear"`.
 
 ## Security and privacy
 

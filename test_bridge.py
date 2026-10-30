@@ -678,6 +678,46 @@ class BridgeTest(unittest.TestCase):
         self.assertIn("This session (sess-a", r.stdout)
         self.assertIn("Slack mode", r.stdout)
 
+    def test_a_cleared_session_stops_and_sends_nothing_more(self):
+        self.write_config(grace_s=30)
+        p = self.hook("stop", self.stop_payload())             # in its grace period
+        time.sleep(0.3)
+        end = {"session_id": "sess-a", "hook_event_name": "SessionEnd", "reason": "clear"}
+        self.assertEqual(self.finish(self.hook("sessionend", end))[0], 0)
+        self.assertEqual(self.finish(p)[:2], (0, ""))
+        self.assertEqual(self.slack.parents(), [])
+        self.assertTrue(self.state_of()["ended"])
+        self.write_config(grace_s=0.1)
+        rc, out, err = self.finish(self.hook("stop", self.stop_payload()))
+        self.assertEqual((rc, out, err), (0, "", ""))
+        self.assertEqual(self.slack.parents(), [])
+
+    def test_a_session_ending_closes_its_open_dm(self):
+        p = self.hook("stop", self.stop_payload())
+        self.slack.wait_parents(1)
+        end = {"session_id": "sess-a", "hook_event_name": "SessionEnd", "reason": "clear"}
+        self.finish(self.hook("sessionend", end))
+        self.assertEqual(self.finish(p)[:2], (0, ""))
+        self.assertIn("The session has ended", self.slack.parents()[0]["text"])
+
+    def test_a_resumed_session_is_live_again(self):
+        self.finish(self.hook("sessionend", {"session_id": "sess-a", "reason": "other"}))
+        self.cli("status")                                    # creates nothing by itself
+        self.finish(self.hook("prompt", {"session_id": "sess-a", "prompt": "hi"}))
+        self.finish(self.hook("sessionend", {"session_id": "sess-a", "reason": "other"}))
+        self.assertTrue(self.state_of()["ended"])
+        self.finish(self.hook("sessionstart", {"session_id": "sess-a", "source": "resume"}))
+        self.assertFalse(self.state_of()["ended"])
+        p = self.hook("stop", self.stop_payload())
+        self.slack.wait_parents(1)
+        self.slack.reply("ok")
+        self.assertEqual(self.finish(p)[0], 2)
+
+    def test_session_hooks_leave_untouched_sessions_alone(self):
+        for cmd in ("sessionend", "sessionstart"):
+            self.assertEqual(self.finish(self.hook(cmd, {"session_id": "never"}))[0], 0)
+        self.assertFalse(os.path.exists(os.path.join(self.home, "state", "never.json")))
+
     def test_a_busy_session_sends_nothing(self):
         payload = dict(self.stop_payload(), background_tasks=[{"id": "b1", "status": "running"}])
         rc, out, err = self.finish(self.hook("stop", payload))

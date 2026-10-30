@@ -16,6 +16,9 @@ one subcommand per hook, the hook's JSON on stdin:
               open Slack question of this session is marked answered there.
   posttool    PostToolUse, async: a tool ran; a permission still waiting (in its grace period or on
               Slack) for that same call was answered at the terminal's dialog, so close it.
+  sessionend  SessionEnd: the session ended (/clear, exit, …): its waiters stop, its open DMs are
+              marked ended, and nothing more goes out for it.
+  sessionstart  SessionStart: a session resumed (/resume) is live again.
 
 Two modes per session. Terminal mode (the default): nothing goes to Slack until you have not typed
 for the grace period (grace_s, 10 minutes). Slack mode (once you answered on Slack): everything
@@ -500,8 +503,9 @@ def slack_mode(state):
 
 
 def session_silenced(state):
+    s = state.read()
     return (os.environ.get("CLAUDE_SLACK_BRIDGE", "").lower() == "off"
-            or bool(state.read().get("off")))
+            or bool(s.get("off")) or bool(s.get("ended")))
 
 
 def take_all(**kv):
@@ -726,7 +730,7 @@ def cmd_stop(hook, cfg, slack, state):
         while time.time() < deadline:
             s = state.read()
             if (s.get("last_prompt", 0) > started or s.get("stop_gen") != gen
-                    or s.get("off") or not claude_alive()):
+                    or s.get("off") or s.get("ended") or not claude_alive()):
                 return 0
             time.sleep(min(cfg["poll_s"], max(deadline - time.time(), 0.01)))
 
@@ -978,8 +982,24 @@ def cmd_posttool(hook, cfg, slack, state):
     return 0
 
 
+def cmd_sessionend(hook, cfg, slack, state):
+    # /clear starts a new session in the same Claude Code process (so CLAUDE_PID still lives):
+    # without this, the old session's waiter DMs its last message 10 minutes later, and an answer
+    # to it would wake the new session.
+    taken = state.update(take_all(ended=True, ended_reason=hook.get("reason", "")))
+    close_all(slack, taken, t("session_gone"))
+    return 0
+
+
+def cmd_sessionstart(hook, cfg, slack, state):
+    if state.read().get("ended"):          # the same session resumed: live again
+        state.set(ended=False)
+    return 0
+
+
 HOOKS = {"stop": cmd_stop, "ask": cmd_ask, "permission": cmd_permission}
-BOOKKEEPING = {"prompt": cmd_prompt, "posttool": cmd_posttool}   # they run even when silenced
+BOOKKEEPING = {"prompt": cmd_prompt, "posttool": cmd_posttool,     # they run even when silenced
+               "sessionend": cmd_sessionend, "sessionstart": cmd_sessionstart}
 
 
 # --------------------------------------------------------------------------- by hand
@@ -1080,6 +1100,8 @@ def main(argv):
         if cmd in BOOKKEEPING:
             if cmd == "posttool" and not state.has_open():
                 return 0  # every tool call lands here: the common case touches nothing
+            if cmd in ("sessionend", "sessionstart") and not os.path.exists(state.path):
+                return 0  # a session the bridge never touched
             try:
                 cfg = load_config()
                 slack = Slack(cfg)

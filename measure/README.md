@@ -13,6 +13,7 @@ git: they hold the sessions' screens and transcripts).
 | `drive.py interactive [--long]` | the wake-up from a Slack reply, `AskUserQuestion` with free text, the dialogs while a hook waits, a permission answered at the terminal; `--long`: a hook timeout above 600 s |
 | `drive2.py` | a busy session (background work) sends nothing; the `background_tasks` format |
 | `drive3.py` | a permission allowed and one denied at the terminal within the grace period (no DM); Slack mode (the next DM at once); typing returns to terminal mode |
+| `drive4.py` | `/clear` while a turn's DM is in its grace period: no DM for the old session, the new one works |
 
 `dump_hook.py` records what a hook receives (its JSON and the session-kind variables, never a
 secret) into `measure/dumps/`. The terminal driver handles the folder-trust dialog; a newer Claude
