@@ -1,0 +1,64 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I \"$HOME/.claude/slack-bridge/bridge.py\" stop",
+            "asyncRewake": true,
+            "timeout": 3600
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I \"$HOME/.claude/slack-bridge/bridge.py\" ask",
+            "timeout": 1860
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I \"$HOME/.claude/slack-bridge/bridge.py\" permission",
+            "timeout": 1860
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I \"$HOME/.claude/slack-bridge/bridge.py\" posttool",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I \"$HOME/.claude/slack-bridge/bridge.py\" prompt",
+            "async": true
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": ["Bash(python3 -I ~/.claude/slack-bridge/bridge.py *)"]
+  }
+}

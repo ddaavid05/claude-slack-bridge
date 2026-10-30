@@ -1,0 +1,25 @@
+# Runtime: per-session state and the log (written next to bridge.py)
+/state/
+/bridge.log
+/bridge.log.1
+
+# Your own notes, backups made by install.sh, anything personal
+/local/
+
+# Measurement output: screen logs, transcripts, hook dumps, the throwaway session's folder
+/measure/results/
+/measure/dumps/
+/measure/work/
+/measure/bridge-home/
+/measure/config.json
+/measure/settings.json
+/measure/*.out
+
+__pycache__/
+*.pyc
+*.tmp
+*.tmp-slack-bridge
+
+# Never commit a real config (it holds your token)
+config.json
+!claude/settings.snippet.json
